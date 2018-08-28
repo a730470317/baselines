@@ -97,6 +97,13 @@ class Runner(AbstractEnvRunner):
         self.gamma = gamma
 
     def run(self):
+        import json
+        json_config = {"Render":0}
+        try:
+            json_config = json.load(open("C:/config/ppo2.json", 'r'))
+        except Exception as e:
+            print(e)
+
         mb_obs, mb_rewards, mb_actions, mb_values, mb_dones, mb_neglogpacs = [],[],[],[],[],[]
         mb_states = self.states
         epinfos = []
@@ -108,6 +115,8 @@ class Runner(AbstractEnvRunner):
             mb_neglogpacs.append(neglogpacs)
             mb_dones.append(self.dones)
             self.obs[:], rewards, self.dones, infos = self.env.step(actions)
+            if(json_config["Render"] == 1):
+                self.env.render()
             for info in infos:
                 maybeepinfo = info.get('episode')
                 if maybeepinfo: epinfos.append(maybeepinfo)

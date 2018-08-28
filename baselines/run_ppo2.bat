@@ -1,0 +1,1 @@
+python run.py --alg=ppo2 --env=Humanoid-v2 --network=mlp --num_timesteps=2e7>"log_trpo.txt"

@@ -14,6 +14,10 @@ from baselines.common.policies import build_policy
 from contextlib import contextmanager
 
 def traj_segment_generator(pi, env, horizon, stochastic):
+    import json
+    json_config = {"Render": 0}
+
+
     # Initialize state variables
     t = 0
     ac = env.action_space.sample()
@@ -57,11 +61,17 @@ def traj_segment_generator(pi, env, horizon, stochastic):
         prevacs[i] = prevac
 
         ob, rew, new, _ = env.step(ac)
+        if (json_config["Render"] == 1):
+            env.render()
         rews[i] = rew
 
         cur_ep_ret += rew
         cur_ep_len += 1
         if new:
+            try:
+                json_config = json.load(open("C:/config/trpo.json", 'r'))
+            except Exception as e:
+                print(e)
             ep_rets.append(cur_ep_ret)
             ep_lens.append(cur_ep_len)
             cur_ep_ret = 0
