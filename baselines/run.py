@@ -49,22 +49,28 @@ def train(args, extra_args):
         
     total_timesteps = int(args.num_timesteps)
     seed = args.seed
+    print("Hello, debug. line 52")
 
     learn = get_learn_function(args.alg)
+    print("Hello, debug. line 55")
     alg_kwargs = get_learn_function_defaults(args.alg, env_type)
+    print("Hello, debug. line 57")
     alg_kwargs.update(extra_args)
+    print("Hello, debug. line 59")
 
     env = build_env(args)
+    print("Hello, debug. line 62")
 
     if args.network:
         alg_kwargs['network'] = args.network
     else:
         if alg_kwargs.get('network') is None:
             alg_kwargs['network'] = get_default_network(env_type)
- 
-       
+
+    print("Hello, debug. line 70")
     
     print('Training {} on {}:{} with arguments \n{}'.format(args.alg, env_type, env_id, alg_kwargs))
+
 
     model = learn(
         env=env,  
@@ -72,7 +78,7 @@ def train(args, extra_args):
         total_timesteps=total_timesteps,
         **alg_kwargs
     )
-
+    print("Hello, debug. line 81")
     return model, env
 
 
@@ -198,7 +204,8 @@ def parse(v):
 
 def main():
     # configure logger, disable logging in child MPI processes (with rank > 0) 
-            
+    print("Hello, debug.")
+
     arg_parser = common_arg_parser()
     args, unknown_args = arg_parser.parse_known_args()
     extra_args = {k: parse(v) for k,v in parse_unknown_args(unknown_args).items()}
@@ -211,14 +218,21 @@ def main():
         logger.configure(format_strs = [])
         rank = MPI.COMM_WORLD.Get_rank()
 
+    print("Hello, debug. line 214")
+
     model, _ = train(args, extra_args)
+
+    print("Hello, debug. line 218")
 
     if args.save_path is not None and rank == 0:
         save_path = osp.expanduser(args.save_path)
         model.save(save_path)
-    
 
-    if args.play:
+    print("Hello, debug.")
+
+    # if args.play:
+    if True:
+        print("args.play == True")
         logger.log("Running trained model")
         env = build_env(args)
         obs = env.reset()
