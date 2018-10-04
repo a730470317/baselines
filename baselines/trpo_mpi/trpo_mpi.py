@@ -45,6 +45,7 @@ def traj_segment_generator(pi, env, horizon, stochastic):
         # before returning segment [0, T-1] so we get the correct
         # terminal value
         if t > 0 and t % horizon == 0:
+            # https://www.jianshu.com/p/d09778f4e055 see Point 5
             yield {"ob":      obs, "rew": rews, "vpred": vpreds, "new": news,
                    "ac":      acs, "prevac": prevacs, "nextvpred": vpred * (1 - new),
                    "ep_rets": ep_rets, "ep_lens": ep_lens}
@@ -188,18 +189,18 @@ def learn(*,
     dist = mean_kl
 
     all_var_list = get_trainable_variables("pi")
-    # var_list = [v for v in all_var_list if v.name.split("/")[1].startswith("pol")]
+    # policy_var_list = [v for v in all_var_list if v.name.split("/")[1].startswith("pol")]
     # vf_var_list = [v for v in all_var_list if v.name.split("/")[1].startswith("vf")]
-    var_list = get_pi_trainable_variables("pi")
+    policy_var_list = get_pi_trainable_variables("pi")
     vf_var_list = get_vf_trainable_variables("pi")
 
     vfadam = MpiAdam(vf_var_list)
 
-    get_flat = U.GetFlat(var_list)
-    set_from_flat = U.SetFromFlat(var_list)
-    kl_grad = tf.gradients(dist, var_list)  # grad of KL-Divergence
+    get_flat = U.GetFlat(policy_var_list)
+    set_from_flat = U.SetFromFlat(policy_var_list)
+    kl_grad = tf.gradients(dist, policy_var_list)  # grad of KL-Divergence
     flat_tangent = tf.placeholder(dtype=tf.float32, shape=[None], name="flat_tan")
-    shapes = [var.get_shape().as_list() for var in var_list]
+    shapes = [var.get_shape().as_list() for var in policy_var_list]
     start = 0
     tangents = []
     for shape in shapes:
@@ -207,13 +208,13 @@ def learn(*,
         tangents.append(tf.reshape(flat_tangent[start:start + sz], shape))
         start += sz
     gvp = tf.add_n([tf.reduce_sum(g * tangent) for (g, tangent) in zipsame(kl_grad, tangents)])  # pylint: disable=E1111
-    fvp = U.flatgrad(gvp, var_list)
+    fvp = U.flatgrad(gvp, policy_var_list)
 
     assign_old_eq_new = U.function([], [], updates=[tf.assign(oldv, newv)
                                                     for (oldv, newv) in zipsame(get_variables("oldpi"), get_variables("pi"))])
 
     compute_losses = U.function([ob, ac, target_advantage_function], losses)
-    compute_lossandgrad = U.function([ob, ac, target_advantage_function], losses + [U.flatgrad(optim_gain, var_list)])
+    compute_lossandgrad = U.function([ob, ac, target_advantage_function], losses + [U.flatgrad(optim_gain, policy_var_list)])
     compute_fvp = U.function([flat_tangent, ob, ac, target_advantage_function], fvp)
     compute_vflossandgrad = U.function([ob, empirical_return], U.flatgrad(vferr, vf_var_list))
 
@@ -274,7 +275,7 @@ def learn(*,
         logger.log("********** Iteration %i ************" % iters_so_far)
 
         with timed("sampling"):
-            seg = seg_gen.__next__()
+            seg = seg_gen.__next__()    # using yield generator generate sample data
         add_vtarg_and_adv(seg, gamma, lam)
 
         # ob, ac, atarg, ret, td1ret = map(np.concatenate, (obs, acs, atargs, rets, td1rets))
