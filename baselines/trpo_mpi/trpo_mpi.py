@@ -21,7 +21,7 @@ def traj_segment_generator(pi, env, horizon, stochastic):
     # Initialize state variables
     t = 0
     ac = env.action_space.sample()
-    new = True
+    if_done = True
     rew = 0.0
     ob = env.reset()
 
@@ -47,7 +47,7 @@ def traj_segment_generator(pi, env, horizon, stochastic):
         if t > 0 and t % horizon == 0:
             # https://www.jianshu.com/p/d09778f4e055 see Point 5
             yield {"ob":      obs, "rew": rews, "vpred": vpreds, "new": news,
-                   "ac":      acs, "prevac": prevacs, "nextvpred": vpred * (1 - new),
+                   "ac":      acs, "prevac": prevacs, "nextvpred": vpred * (1 - if_done),
                    "ep_rets": ep_rets, "ep_lens": ep_lens}
             _, vpred, _, _ = pi.step(ob, stochastic=stochastic)
             # Be careful!!! if you change the downstream algorithm to aggregate
@@ -56,19 +56,19 @@ def traj_segment_generator(pi, env, horizon, stochastic):
             ep_lens = []
         i = t % horizon
         obs[i] = ob
-        vpreds[i] = vpred
-        news[i] = new
+        vpreds[i] = vpred       # come form network value function predition.
+        news[i] = if_done       # if done of not
         acs[i] = ac
         prevacs[i] = prevac
 
-        ob, rew, new, _ = env.step(ac)  # observation, reward, if_done, info
+        ob, rew, if_done, _ = env.step(ac)  # observation, reward, if_done, info
         if (json_config["Render"] == 1):
             env.render()
         rews[i] = rew
 
         cur_ep_ret += rew
         cur_ep_len += 1
-        if new:
+        if if_done:
             try:
                 json_config = json.load(open("C:/config/trpo.json", 'r'))
             except Exception as e:
@@ -84,7 +84,7 @@ def traj_segment_generator(pi, env, horizon, stochastic):
 def add_vtarg_and_adv(seg, gamma, lam):
     new = np.append(seg["new"], 0)  # last element is only used for last vtarg, but we already zeroed it if last new = 1
     vpred = np.append(seg["vpred"], seg["nextvpred"])
-    T = len(seg["rew"])
+    T = len(seg["rew"])             # rew = reward
     seg["adv"] = gaelam = np.empty(T, 'float32')
     rew = seg["rew"]
     lastgaelam = 0
@@ -116,7 +116,7 @@ def learn(*,
           ):
     '''
     learn a policy function with TRPO algorithm
-    
+
     Parameters:
     ----------
     network                 neural network to learn. Can be either string ('mlp', 'cnn', 'lstm', 'lnlstm' for basic types)
@@ -150,6 +150,9 @@ def learn(*,
             intra_op_parallelism_threads=cpus_per_worker
     ))
 
+    # Example: network = "mlp"
+    # Total timestep = "200000"
+
     policy = build_policy(env, network, value_network='copy', **network_kwargs)
     set_global_seeds(seed)
 
@@ -161,6 +164,7 @@ def learn(*,
 
     ob = observation_placeholder(ob_space)
     with tf.variable_scope("pi"):
+        # pi = baselines.common.policies.PolicyWithValue
         pi = policy(observ_placeholder=ob)
     with tf.variable_scope("oldpi"):
         oldpi = policy(observ_placeholder=ob)
@@ -169,6 +173,7 @@ def learn(*,
     target_advantage_function = tf.placeholder(dtype=tf.float32, shape=[None])  # Target advantage function (if applicable)
     empirical_return = tf.placeholder(dtype=tf.float32, shape=[None])  # Empirical return
 
+    # pi.pdtype =  baselines.common.distributions.DiagGaussianPdType
     ac = pi.pdtype.sample_placeholder([None])
 
     kld_old_new = oldpi.pd.kl(pi.pd)  # pd = probability distribution.
@@ -204,7 +209,7 @@ def learn(*,
     start = 0
     tangents = []
     for shape in shapes:
-        sz = U.intprod(shape)
+        sz = U.intprod(shape) # return int(np.prod(x))
         tangents.append(tf.reshape(flat_tangent[start:start + sz], shape))
         start += sz
     gvp = tf.add_n([tf.reduce_sum(g * tangent) for (g, tangent) in zipsame(kl_grad, tangents)])  # pylint: disable=E1111
@@ -263,6 +268,8 @@ def learn(*,
     assert sum([max_iters > 0, total_timesteps > 0, max_episodes > 0]) < 2, \
         'out of max_iters, total_timesteps, and max_episodes only one should be specified'
 
+    tf.summary.FileWriter("c:/baseline_log/", tf.get_default_graph())
+
     while True:
         if callback:
             callback(locals(), globals())
@@ -279,7 +286,7 @@ def learn(*,
         add_vtarg_and_adv(seg, gamma, lam)
 
         # ob, ac, atarg, ret, td1ret = map(np.concatenate, (obs, acs, atargs, rets, td1rets))
-        ob, ac, target_advantage_function, tdlamret = seg["ob"], seg["ac"], seg["adv"], seg["tdlamret"]
+        ob, ac, target_advantage_function, tdlamret = seg["ob"], seg["ac"], seg["adv"], seg["tdlamret"] # seg["tdlamret"] = seg["adv"] + seg["vpred"]
         vpredbefore = seg["vpred"]  # predicted value function before udpate
         target_advantage_function = (target_advantage_function - target_advantage_function.mean()) / target_advantage_function.std()  # standardized advantage function estimate
 
