@@ -162,7 +162,7 @@ def learn(*,
     ob_space = env.observation_space
     ac_space = env.action_space
 
-    ob = observation_placeholder(ob_space)
+    ob = observation_placeholder(ob_space, name="observation_plh")
     with tf.variable_scope("pi"):
         # pi = baselines.common.policies.PolicyWithValue
         pi = policy(observ_placeholder=ob)
@@ -170,8 +170,8 @@ def learn(*,
         oldpi = policy(observ_placeholder=ob)
 
     # Important ! taget_advantage_function()
-    target_advantage_function = tf.placeholder(dtype=tf.float32, shape=[None])  # Target advantage function (if applicable)
-    empirical_return = tf.placeholder(dtype=tf.float32, shape=[None])  # Empirical return
+    target_advantage_function = tf.placeholder(dtype=tf.float32, shape=[None] , name= "target_advantage")  # Target advantage function (if applicable)
+    empirical_return = tf.placeholder(dtype=tf.float32, shape=[None] , name = "empirical_return")  # Empirical return
 
     # pi.pdtype =  baselines.common.distributions.DiagGaussianPdType
     ac = pi.pdtype.sample_placeholder([None])
@@ -182,10 +182,10 @@ def learn(*,
     mean_entropy = tf.reduce_mean(entropy)
     entropy_bonus = entcoeff * mean_entropy     # entcoeff=0.0(default),
 
-    vferr = tf.reduce_mean(tf.square(pi.vf - empirical_return)) # vf = value function
+    vferr = tf.reduce_mean(tf.square(pi.vf - empirical_return), name = "reduce_mean_vf") # vf = value function
 
     ratio = tf.exp(pi.pd.logp(ac) - oldpi.pd.logp(ac))  # advantage * pnew / pold
-    surr_gain = tf.reduce_mean(ratio * target_advantage_function)
+    surr_gain = tf.reduce_mean(ratio * target_advantage_function, name = "reduce_mean_surr_gain")
 
     optim_gain = surr_gain + entropy_bonus
     losses = [optim_gain, mean_kl, entropy_bonus, surr_gain, mean_entropy]
@@ -269,6 +269,7 @@ def learn(*,
         'out of max_iters, total_timesteps, and max_episodes only one should be specified'
 
     tf.summary.FileWriter("c:/baseline_log/", tf.get_default_graph())
+    print(colorize("Save grapht to c:/baseline_log/", "red" ))
 
     while True:
         if callback:

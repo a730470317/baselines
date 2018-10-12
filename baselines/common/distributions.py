@@ -207,7 +207,7 @@ class DiagGaussianPd(Pd):
         assert isinstance(other, DiagGaussianPd)
         return tf.reduce_sum(other.logstd - self.logstd + (tf.square(self.std) + tf.square(self.mean - other.mean)) / (2.0 * tf.square(other.std)) - 0.5, axis=-1)
     def entropy(self):
-        return tf.reduce_sum(self.logstd + .5 * np.log(2.0 * np.pi * np.e), axis=-1)
+        return tf.reduce_sum(self.logstd + .5 * np.log(2.0 * np.pi * np.e), axis=-1, name="DiagGaussianPd_entropy")
     def sample(self):
         return self.mean + self.std * tf.random_normal(tf.shape(self.mean))
     @classmethod
