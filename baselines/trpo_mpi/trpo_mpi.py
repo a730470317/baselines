@@ -152,7 +152,8 @@ def learn(*,
 
     # Example: network = "mlp"
     # Total timestep = "200000"
-
+    # env : environment (one of the gym environments or wrapped via baselines.common.vec_env.VecEnv-type class
+    
     policy = build_policy(env, network, value_network='copy', **network_kwargs)
     set_global_seeds(seed)
 

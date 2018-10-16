@@ -18,6 +18,8 @@ from baselines.common.vec_env.dummy_vec_env import DummyVecEnv
 from baselines.common.vec_env.subproc_vec_env import SubprocVecEnv
 from baselines.common import atari_wrappers, retro_wrappers
 
+import air_sim_deep_drone
+
 try:
     from mpi4py import MPI
 except ImportError:
@@ -138,6 +140,9 @@ def build_env(args):
             return e
             
         env = DummyVecEnv([make_env])
+    elif env_type == 'air_sim_deep_drone':
+        env = gym.make(env_id)
+        return  env
 
     else:
         raise ValueError('Unknown env_type {}'.format(env_type))
