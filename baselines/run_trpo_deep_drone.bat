@@ -1,1 +1,1 @@
-python run.py --alg=trpo_mpi --env=Deepdrone-v0 --network=mlp --num_timesteps=2e7
+python run.py --alg=trpo_mpi --env=Deepdrone-v0 --network=mlp --num_timesteps=2e10
