@@ -319,7 +319,7 @@ def load_state(fname, sess=None):
 def save_state(fname, sess=None):
     sess = sess or get_session()
     os.makedirs(os.path.dirname(fname), exist_ok=True)
-    saver = tf.train.Saver()
+    saver = tf.train.Saver(max_to_keep=30000)
     saver.save(tf.get_default_session(), fname)
 
 # The methods above and below are clearly doing the same thing, and in a rather similar way
