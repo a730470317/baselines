@@ -3,6 +3,7 @@ from baselines import logger
 import baselines.common.tf_util as U
 import tensorflow as tf, numpy as np
 import time
+import json
 from baselines.common import colorize
 from mpi4py import MPI
 from collections import deque
@@ -15,9 +16,7 @@ from contextlib import contextmanager
 
 
 def traj_segment_generator(pi, env, horizon, stochastic):
-    import json
     json_config = {"Render": 0}
-
     # Initialize state variables
     t = 0
     ac = env.action_space.sample()
@@ -62,6 +61,8 @@ def traj_segment_generator(pi, env, horizon, stochastic):
         prevacs[i] = prevac
 
         ob, rew, if_done, _ = env.step(ac)  # observation, reward, if_done, info
+        np.set_printoptions(precision=1)
+        # print(i,' -- ',np.array(obs[i]))
         if (json_config["Render"] == 1):
             env.render()
         rews[i] = rew
@@ -377,6 +378,21 @@ def learn(*,
 
         if rank == 0:
             logger.dump_tabular()
+
+        try:
+            json_config = {"model_save_each_times": 10, "model_save_path": "d:/training_log/baseline_trpo/"}
+            json_config = json.load(open("C:/config/trpo.json", 'r'))
+            if (iters_so_far >= 10 and
+                    iters_so_far % json_config["model_save_each_times"] == 0):
+                file_name = json_config["model_save_path"] + "/iter_%d" % iters_so_far
+                print(colorize("save model to: %s" % file_name, "yellow"))
+                pi.save(json_config["model_save_path"]+"/last")
+                pi.save(file_name)
+                f = open(file_name+"_"+str(int(np.mean(reward_buffer))),'w')
+                f.close()
+        except Exception as e:
+            print(colorize("Error happen in json_saving, error = \n","red"))
+            print(e)
 
     return pi
 

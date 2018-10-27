@@ -1,1 +1,1 @@
-python run.py --alg=trpo_mpi --env=Deepdrone-v0 --network=mlp --num_timesteps=2e10
+python run.py --alg=trpo_mpi --env=Deepdrone-v0 --network=mlp --num_timesteps=2e10 --load_path="D:/training_log/baseline_trpo/last"
