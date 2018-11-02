@@ -5,6 +5,17 @@ from baselines.a2c.utils import conv, fc, conv_to_fc, batch_to_seq, seq_to_batch
 from baselines.common.mpi_running_mean_std import RunningMeanStd
 import tensorflow.contrib.layers as layers
 
+import sys
+sys.path.append("G:\\My_research\\Airsim\\query_data\\deep_drone\\")
+sys.path.append("G:\\My_research\\Airsim\\query_data\\query_data\\")
+sys.path.append("G:\\My_research\\Airsim\\query_data\\")
+print(sys.path)
+from tf_policy_network import Policy_network
+def pretrain(**conv_kwargs):
+    def network_fn(X):
+        print(" Build pretrain network ")
+        return Policy_network(X, if_restore = 0).control_network.net_output, None
+    return network_fn
 
 def nature_cnn(unscaled_images, **conv_kwargs):
     """
@@ -200,5 +211,7 @@ def get_network_builder(name):
         return cnn_lstm
     elif name == 'cnn_lnlstm':
         return cnn_lnlstm
+    elif name == 'pretrain':
+        return pretrain
     else:
         raise ValueError('Unknown network type: {}'.format(name))

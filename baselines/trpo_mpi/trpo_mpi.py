@@ -48,6 +48,7 @@ def traj_segment_generator(pi, env, horizon, stochastic):
             yield {"ob":      obs, "rew": rews, "vpred": vpreds, "new": news,
                    "ac":      acs, "prevac": prevacs, "nextvpred": vpred * (1 - if_done),
                    "ep_rets": ep_rets, "ep_lens": ep_lens}
+
             _, vpred, _, _ = pi.step(ob, stochastic=stochastic)
             # Be careful!!! if you change the downstream algorithm to aggregate
             # several of these batches, then be sure to do a deepcopy
@@ -168,8 +169,10 @@ def learn(*,
     with tf.variable_scope("pi"):
         # pi = baselines.common.policies.PolicyWithValue
         pi = policy(observ_placeholder=ob)
+        print(colorize(pi, "yellow"))
     with tf.variable_scope("oldpi"):
         oldpi = policy(observ_placeholder=ob)
+        print(colorize(pi, "yellow"))
 
     # Important ! taget_advantage_function()
     target_advantage_function = tf.placeholder(dtype=tf.float32, shape=[None] , name= "target_advantage")  # Target advantage function (if applicable)
@@ -245,6 +248,17 @@ def learn(*,
     U.initialize()
     if load_path is not None:
         pi.load(load_path)
+
+    ################################################### Restore para###########
+    import sys
+    sys.path.append("G:\\My_research\\Airsim\\query_data\\deep_drone\\")
+    sys.path.append("G:\\My_research\\Airsim\\query_data\\query_data\\")
+    sys.path.append("G:\\My_research\\Airsim\\query_data\\")
+    print(sys.path)
+    import tf_policy_network
+    tf_policy_network.resort_para_form_checkpoint("pi/pi/", U.get_session().graph, U.get_session() )
+    tf_policy_network.resort_para_form_checkpoint("oldpi/pi/", U.get_session().graph, U.get_session() )
+    ###########################################################################
 
     th_init = get_flat()
     MPI.COMM_WORLD.Bcast(th_init, root=0)
