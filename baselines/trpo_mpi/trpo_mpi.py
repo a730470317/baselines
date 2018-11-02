@@ -36,7 +36,7 @@ def traj_segment_generator(pi, env, horizon, stochastic):
     news = np.zeros(horizon, 'int32')
     acs = np.array([ac for _ in range(horizon)])
     prevacs = acs.copy()
-
+    pi.restore_pi_parameter()
     while True:
         prevac = ac
         ac, vpred, _, _ = pi.step(ob, stochastic=stochastic)
@@ -249,16 +249,6 @@ def learn(*,
     if load_path is not None:
         pi.load(load_path)
 
-    ################################################### Restore para###########
-    import sys
-    sys.path.append("G:\\My_research\\Airsim\\query_data\\deep_drone\\")
-    sys.path.append("G:\\My_research\\Airsim\\query_data\\query_data\\")
-    sys.path.append("G:\\My_research\\Airsim\\query_data\\")
-    print(sys.path)
-    import tf_policy_network
-    tf_policy_network.resort_para_form_checkpoint("pi/pi/", U.get_session().graph, U.get_session() )
-    tf_policy_network.resort_para_form_checkpoint("oldpi/pi/", U.get_session().graph, U.get_session() )
-    ###########################################################################
 
     th_init = get_flat()
     MPI.COMM_WORLD.Bcast(th_init, root=0)

@@ -6,14 +6,32 @@ from baselines.common.input import observation_placeholder, encode_observation
 from baselines.common.tf_util import adjust_shape
 from baselines.common.mpi_running_mean_std import RunningMeanStd
 from baselines.common.models import get_network_builder
-
+from baselines.common import colorize
 import gym
+
+################################################### Restore para###########
+import sys
+import numpy as np
+sys.path.append("G:\\My_research\\Airsim\\query_data\\deep_drone\\")
+sys.path.append("G:\\My_research\\Airsim\\query_data\\query_data\\")
+sys.path.append("G:\\My_research\\Airsim\\query_data\\")
+print(sys.path)
+from tf_policy_network import Policy_network
+import tf_policy_network
+###########################################################################
 
 
 class PolicyWithValue(object):
     """
     Encapsulates fields and methods for RL policy and value function estimation with shared parameters
     """
+    def restore_pi_parameter(self):
+
+        sess = self.sess or tf.get_default_session()
+        sess.run(tf.global_variables_initializer())
+        tf_policy_network.resort_para_form_checkpoint("pi/pi/",sess.graph, sess)
+        tf_policy_network.resort_para_form_checkpoint("pi/",sess.graph, sess)
+        # tf_policy_network.resort_para_form_checkpoint("oldpi/pi/", sess.graph, sess)
 
     def __init__(self, env, observations, policy_latent, estimate_q=False, vf_latent=None, sess=None, **tensors):
         """
@@ -32,11 +50,15 @@ class PolicyWithValue(object):
         **tensors       tensorflow tensors for additional attributes such as state or mask
 
         """
-            
+        self.obervation_29 = tf.placeholder(shape=[None, 29], dtype=tf.float32, name = "policy_network_obs")
+        self.policy_network = Policy_network(self.obervation_29 )
+
         self.obs = observations
         self.state = tf.constant([])
         self.initial_state = None
         self.__dict__.update(tensors)
+
+        self.action_debug =policy_latent
 
         vf_latent = vf_latent if vf_latent is not None else policy_latent
 
@@ -45,9 +67,11 @@ class PolicyWithValue(object):
 
         self.pdtype = make_pdtype(env.action_space)
 
-        self.pd, self.pi = self.pdtype.pdfromlatent(policy_latent, init_scale=0.01) # self.pdfromflat(pdparam), mean
+        # self.pd, self.pi = self.pdtype.pdfromlatent(policy_latent, init_scale=0.01) # self.pdfromflat(pdparam), mean
+        self.pd, self.pi = self.pdtype.pdfromlatent(policy_latent, init_scale = 1.0, init_bias= 0.0) # self.pdfromflat(pdparam), mean
 
-        self.action = self.pd.sample()
+        # self.action = self.pd.sample()
+        self.action = self.action_debug
         self.neglogp = self.pd.neglogp(self.action)
         self.sess = sess
 
@@ -61,14 +85,29 @@ class PolicyWithValue(object):
 
     # variables =  [self.action, self.vf, self.state, self.neglogp]
     def _evaluate(self, variables, observation, **extra_feed):
+        np.set_printoptions(precision= 5)
+        # observation =  np.array([-10.31,   8.52,  10.41,   3.79,   4.19,  -0.8,   10.61,   0.37,  -3.24, -57.87, 10.97,  94.49,   6.07,   4.,     8.1,   -0.17,   5.06,   0,     0,    -0.18,   0., 0.,    -1.55,   7.,     0.,     0.,     0.,     0.,    -9.8 ])
+        print(colorize((self.obs, " feed_ob = ", observation), "blue"))
         sess = self.sess or tf.get_default_session()
+        # print(colorize(("self.obs = ", adjust_shape(self.obs, observation)), "yellow"))
+        print(colorize(("variables = ", variables), "yellow"))
         feed_dict = {self.obs: adjust_shape(self.obs, observation)}
         for inpt_name, data in extra_feed.items():
             if inpt_name in self.__dict__.keys():
+                # print(colorize(("inpt_name = ", inpt_name), "yellow"))
                 inpt = self.__dict__[inpt_name]
                 if isinstance(inpt, tf.Tensor) and inpt._op.type == 'Placeholder':
                     feed_dict[inpt] = adjust_shape(inpt, data)
+        # action_run = sess.run(self.action_debug, feed_dict)
+        action_run = sess.run(self.policy_network.control_network.net_output , feed_dict={self.policy_network.observation: np.matrix(observation)})
+        var_run = sess.run(variables, feed_dict)
 
+        print(colorize(("var_run = ", var_run), "red"))
+        print(colorize(("act_run = ", action_run), "green"))
+        np.set_printoptions(precision= 2)
+
+        var_run[0] = action_run
+        return var_run
         return sess.run(variables, feed_dict)
 
     def step(self, observation, **extra_feed):
@@ -86,7 +125,6 @@ class PolicyWithValue(object):
         -------
         (action, value estimate, next state, negative log likelihood of the action under current policy parameters) tuple
         """
-        print(colorize(("ob = ", observation), "blue"))
         a, v, state, neglogp = self._evaluate([self.action, self.vf, self.state, self.neglogp], observation, **extra_feed)
         if state.size == 0:
             state = None
