@@ -40,11 +40,12 @@ def traj_segment_generator(pi, env, horizon, stochastic):
     env.if_log = 0
     while True:
         prevac = ac
+        # ac, vpred, _, _ = pi.step(ob, stochastic=stochastic)
         ac, vpred, _, _ = pi.step(ob, stochastic=stochastic)
         # Slight weirdness here because we need value function at time T
         # before returning segment [0, T-1] so we get the correct
         # terminal value
-        if t > 0 and t % horizon == 0:
+        if ((t > 0 and t % horizon == 0)):
             # https://www.jianshu.com/p/d09778f4e055 see Point 5
             yield {"ob":      obs, "rew": rews, "vpred": vpreds, "new": news,
                    "ac":      acs, "prevac": prevacs, "nextvpred": vpred * (1 - if_done),
@@ -63,6 +64,7 @@ def traj_segment_generator(pi, env, horizon, stochastic):
         prevacs[i] = prevac
 
         ob, rew, if_done, _ = env.step(ac)  # observation, reward, if_done, info
+
         np.set_printoptions(precision=1)
         # print(i,' -- ',np.array(obs[i]))
         if (json_config["Render"] == 1):
@@ -72,6 +74,10 @@ def traj_segment_generator(pi, env, horizon, stochastic):
         cur_ep_ret += rew
         cur_ep_len += 1
         if if_done:
+            yield {"ob":      obs, "rew": rews, "vpred": vpreds, "new": news,
+                   "ac":      acs, "prevac": prevacs, "nextvpred": vpred * (1 - if_done),
+                   "ep_rets": ep_rets, "ep_lens": ep_lens}
+
             try:
                 json_config = json.load(open("C:/config/trpo.json", 'r'))
             except Exception as e:
@@ -133,7 +139,7 @@ def learn(*,
     cg_damping              conjugate gradient damping
     vf_stepsize             learning rate for adam optimizer used to optimie value function loss
     vf_iters                number of iterations of value function optimization iterations per each policy optimization step
-    total_timesteps           max number of timesteps
+    total_timesteps         max number of timesteps
     max_episodes            max number of episodes
     max_iters               maximum number of policy optimization iterations
     callback                function to be called with (locals(), globals()) each policy optimization step

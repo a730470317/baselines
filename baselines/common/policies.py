@@ -30,6 +30,7 @@ class PolicyWithValue(object):
         sess = self.sess or tf.get_default_session()
         sess.run(tf.global_variables_initializer())
         tf_policy_network.resort_para_form_checkpoint("pi/pi/",sess.graph, sess)
+        tf_policy_network.resort_para_form_checkpoint("oldpi/pi/",sess.graph, sess)
         tf_policy_network.resort_para_form_checkpoint("pi/",sess.graph, sess)
         # tf_policy_network.resort_para_form_checkpoint("oldpi/pi/", sess.graph, sess)
 
@@ -86,7 +87,6 @@ class PolicyWithValue(object):
     # variables =  [self.action, self.vf, self.state, self.neglogp]
     def _evaluate(self, variables, observation, **extra_feed):
         np.set_printoptions(precision= 5)
-        # observation =  np.array([-10.31,   8.52,  10.41,   3.79,   4.19,  -0.8,   10.61,   0.37,  -3.24, -57.87, 10.97,  94.49,   6.07,   4.,     8.1,   -0.17,   5.06,   0,     0,    -0.18,   0., 0.,    -1.55,   7.,     0.,     0.,     0.,     0.,    -9.8 ])
         # print(colorize((self.obs, " feed_ob = ", observation), "blue"))
         sess = self.sess or tf.get_default_session()
         # print(colorize(("self.obs = ", adjust_shape(self.obs, observation)), "yellow"))
@@ -99,14 +99,14 @@ class PolicyWithValue(object):
                 if isinstance(inpt, tf.Tensor) and inpt._op.type == 'Placeholder':
                     feed_dict[inpt] = adjust_shape(inpt, data)
         # action_run = sess.run(self.action_debug, feed_dict)
-        action_run = sess.run(self.policy_network.control_network.net_output , feed_dict={self.policy_network.observation: np.matrix(observation)})
+        # action_run = sess.run(self.policy_network.control_network.net_output , feed_dict={self.policy_network.observation: np.matrix(observation)})
         var_run = sess.run(variables, feed_dict)
 
-        print(colorize(("var_run = ", var_run), "red"))
-        print(colorize(("act_run = ", action_run), "green"))
+        # print(colorize(("var_run = ", var_run), "red"))
+        # print(colorize(("act_run = ", action_run), "green"))
         np.set_printoptions(precision= 2)
 
-        var_run[0] = action_run
+        # var_run[0] = action_run
         return var_run
         return sess.run(variables, feed_dict)
 
