@@ -36,8 +36,7 @@ def traj_segment_generator(pi, env, horizon, stochastic):
     news = np.zeros(horizon, 'int32')
     acs = np.array([ac for _ in range(horizon)])
     prevacs = acs.copy()
-    pi.restore_pi_parameter()
-    env.if_log = 0
+    # env.if_log = 1
     while True:
         prevac = ac
         # ac, vpred, _, _ = pi.step(ob, stochastic=stochastic)
@@ -77,7 +76,7 @@ def traj_segment_generator(pi, env, horizon, stochastic):
             yield {"ob":      obs, "rew": rews, "vpred": vpreds, "new": news,
                    "ac":      acs, "prevac": prevacs, "nextvpred": vpred * (1 - if_done),
                    "ep_rets": ep_rets, "ep_lens": ep_lens}
-
+            t = 0
             try:
                 json_config = json.load(open("C:/config/trpo.json", 'r'))
             except Exception as e:
@@ -255,6 +254,8 @@ def learn(*,
     U.initialize()
     if load_path is not None:
         pi.load(load_path)
+
+    pi.restore_pi_parameter()
 
 
     th_init = get_flat()
