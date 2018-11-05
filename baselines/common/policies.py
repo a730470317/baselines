@@ -12,9 +12,11 @@ import gym
 ################################################### Restore para###########
 import sys
 import numpy as np
-sys.path.append("G:\\My_research\\Airsim\\query_data\\deep_drone\\")
-sys.path.append("G:\\My_research\\Airsim\\query_data\\query_data\\")
-sys.path.append("G:\\My_research\\Airsim\\query_data\\")
+
+Simulator_path = "C:\\Users\\user\\Desktop\\My_research\\my_simulator"
+sys.path.append("%s\\" % Simulator_path)
+sys.path.append("%s\\deep_drone\\" % Simulator_path)
+sys.path.append("%s\\query_data\\" % Simulator_path)
 print(sys.path)
 from tf_policy_network import Policy_network
 import tf_policy_network
@@ -99,13 +101,13 @@ class PolicyWithValue(object):
                 if isinstance(inpt, tf.Tensor) and inpt._op.type == 'Placeholder':
                     feed_dict[inpt] = adjust_shape(inpt, data)
         # action_run = sess.run(self.action_debug, feed_dict)
-        # action_run = sess.run(self.policy_network.control_network.net_output , feed_dict={self.policy_network.observation: np.matrix(observation)})
         var_run = sess.run(variables, feed_dict)
 
         # print(colorize(("var_run = ", var_run), "red"))
         # print(colorize(("act_run = ", action_run), "green"))
         np.set_printoptions(precision= 2)
-
+        # action_run = sess.run(self.policy_network.control_network.net_output , feed_dict={self.policy_network.observation: np.matrix(observation)})
+        # print(var_run[0] - action_run)
         # var_run[0] = action_run
         return var_run
         return sess.run(variables, feed_dict)

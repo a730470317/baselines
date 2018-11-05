@@ -6,11 +6,13 @@ from baselines.common.mpi_running_mean_std import RunningMeanStd
 import tensorflow.contrib.layers as layers
 
 import sys
-sys.path.append("G:\\My_research\\Airsim\\query_data\\deep_drone\\")
-sys.path.append("G:\\My_research\\Airsim\\query_data\\query_data\\")
-sys.path.append("G:\\My_research\\Airsim\\query_data\\")
+Simulator_path = "C:\\Users\\user\\Desktop\\My_research\\my_simulator"
+sys.path.append("%s\\" % Simulator_path)
+sys.path.append("%s\\deep_drone\\" % Simulator_path)
+sys.path.append("%s\\query_data\\" % Simulator_path)
 print(sys.path)
 from tf_policy_network import Policy_network
+
 def pretrain(**conv_kwargs):
     def network_fn(X):
         print(" Build pretrain network ")
