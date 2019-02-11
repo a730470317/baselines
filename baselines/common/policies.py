@@ -10,10 +10,10 @@ from baselines.common import colorize
 import gym
 
 ################################################### Restore para###########
-import sys
+import sys, os
 import numpy as np
 
-Simulator_path = "C:\\Users\\user\\Desktop\\My_research\\my_simulator"
+Simulator_path = os.getenv("CROSS_GAP_WORK_DIR")
 sys.path.append("%s\\" % Simulator_path)
 sys.path.append("%s\\deep_drone\\" % Simulator_path)
 sys.path.append("%s\\query_data\\" % Simulator_path)
@@ -54,7 +54,7 @@ class PolicyWithValue(object):
 
         """
         self.obervation_29 = tf.placeholder(shape=[None, 29], dtype=tf.float32, name = "policy_network_obs")
-        self.policy_network = Policy_network(self.obervation_29 )
+        self.policy_network = Policy_network(self.obervation_29)
 
         self.obs = observations
         self.state = tf.constant([])

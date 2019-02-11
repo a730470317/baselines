@@ -5,8 +5,8 @@ from baselines.a2c.utils import conv, fc, conv_to_fc, batch_to_seq, seq_to_batch
 from baselines.common.mpi_running_mean_std import RunningMeanStd
 import tensorflow.contrib.layers as layers
 
-import sys
-Simulator_path = "C:\\Users\\user\\Desktop\\My_research\\my_simulator"
+import sys, os
+Simulator_path =  os.getenv("CROSS_GAP_WORK_DIR")
 sys.path.append("%s\\" % Simulator_path)
 sys.path.append("%s\\deep_drone\\" % Simulator_path)
 sys.path.append("%s\\query_data\\" % Simulator_path)

@@ -108,7 +108,7 @@ def learn(*,
           env,
           total_timesteps,
           timesteps_per_batch=1024,  # what to train on
-          max_kl=0.001,
+          max_kl=0.01,
           cg_iters=10,
           gamma=0.99,
           lam=1.0,  # advantage estimation
@@ -254,8 +254,8 @@ def learn(*,
     U.initialize()
     if load_path is not None:
         pi.load(load_path)
-
-    pi.restore_pi_parameter()
+    else:
+        pi.restore_pi_parameter()
 
 
     th_init = get_flat()
